@@ -1,29 +1,28 @@
-const mysql = require("mysql");
+const { v4: uuidv4 } = require("uuid");
 const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
 const app = express();
+const http = require("http").createServer(app);
+const socketIO = require("socket.io");
+const { ServiceBusClient } = require("@azure/service-bus");
 const cityCoordinates = require("./cityCoordinates.json");
-const port = 3031;
-
-const connection = mysql.createConnection({
-  host: "127.0.0.1",
-  user: "root",
-  password: "root",
-  port: 3032,
-  database: "datc_schema",
-  insecureAuth: true,
-});
-
-connection.connect((error) => {
-  if (error) {
-    console.log("Error connecting to the MySQL Database", error);
-    return;
-  }
-  console.log("Connection established successfully");
-});
+const { startReceiver } = require("./receive");
+const { startWebSocketServer } = require("./websocketserver");
+const port = 3000;
 
 app.use(express.static(path.join(__dirname, "public")));
+
+const azureStorage = require("azure-storage");
+const connectionString =
+  "DefaultEndpointsProtocol=https;AccountName=ambrosiaalertstorage;AccountKey=rwWTRwFJgtuSVOJikQMJUfyIFFKL172jcVYDS99AIHcO3KIFxNYaPKUAfCUqJqUfnNMwR+neA58a+ASt720Rzw==;EndpointSuffix=core.windows.net";
+const connectionString2 =
+  "Endpoint=sb://alertsbus.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=m1+yr5uKKBkZTx0KKwRD+c9rP85G7LnrQ+ASbPHCD6A=";
+// name of the queue
+const queueName = "messages";
+const tableService = azureStorage.createTableService(connectionString);
+const tableName = "ambrosiatable";
+const tableName2 = "users";
 
 // Define a single route for the root path
 app.get("/", (req, res) => {
@@ -35,123 +34,185 @@ app.use(bodyParser.json());
 
 // Handle POST request for form data
 app.post("/api/postData", (req, res) => {
-  const { text, date, area } = req.body;
+  const { text, date, area, latitude, longitude } = req.body;
 
-  // Generate a unique idfacts using uuid
-  const { latitude, longitude } = cityCoordinates[area];
-  //console.log(idfacts);
-  const insertQuery = `INSERT INTO facts SET ?`;
+  // Generate PartitionKey and RowKey (you can adjust the logic based on your requirements)
+  const partitionKey = uuidv4(); // Set your desired value
+  // Generează un timestamp convertit în șir de caractere pentru RowKey
+  const rowKey = Date.now().toString();
 
-  const values = {
-    text,
-    date,
-    area,
-    latitude,
-    longitude,
+  const entity = {
+    PartitionKey: { _: partitionKey },
+    RowKey: { _: area },
+    text: { _: text },
+    longitude: { _: longitude },
+    latitude: { _: latitude },
   };
 
-  connection.query(insertQuery, values, (error, results) => {
+  // Insert the entity into Azure Table Storage
+  tableService.insertEntity(tableName, entity, (error, result, response) => {
     if (error) {
-      console.error("Error inserting into database:", error);
-      res.status(500).json({ error: "Error inserting into database" });
+      console.error("Error inserting into Azure Table Storage:", error);
+      res
+        .status(500)
+        .json({ error: "Error inserting into Azure Table Storage" });
     } else {
-      console.log("Inserted successfully into database");
-      //res.status(200).json({ success: true });
+      console.log("Inserted successfully into Azure Table Storage");
+      res.json({ success: true });
     }
   });
+});
 
-  try {
-    const query = "SELECT longitude, latitude FROM facts WHERE area = ?";
+app.use(express.json()); // Add this line to parse JSON request bodies
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
 
-    connection.query(query, [area], (err, results) => {
-      if (err) {
-        console.error("Error fetching coordinates from the database: ", err);
-        res.status(500).json({ error: "Internal Server Error" });
-        return;
-      }
+app.post("/api/saveUserData", (req, res) => {
+  const { name, email, longitude, latitude } = req.body;
+  const partitionKey = uuidv4();
+  // Generate a timestamp converted to a string for RowKey
+  const rowKey = Date.now().toString();
 
-      // Extract long and lat from the results
-      const coordinates = results.map((result) => ({
-        longitude: result.longitude,
-        latitude: result.latitude,
-      }));
-      //console.log("Coordonatele obținute:", coordinates);
+  const entity = {
+    PartitionKey: { _: partitionKey },
+    RowKey: { _: name },
+    Email: { _: email },
+    Longitude: { _: longitude },
+    Latitude: { _: latitude },
+  };
 
-      // Return the response
-      res.json({ coordinates });
-    });
-  } catch (error) {
-    console.error("Error in /api/getCoordinates:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+  // Insert the entity into Azure Table Storage
+  tableService.insertEntity(tableName2, entity, (error, result, response) => {
+    if (error) {
+      console.error("Error inserting into Azure Table Storage:", error);
+      res
+        .status(500)
+        .json({ error: "Error inserting into Azure Table Storage" });
+    } else {
+      console.log("Inserted successfully into Azure Table Storage");
+      res.json({ success: true });
+    }
+  });
 });
 
 app.get("/api/getFacts", (req, res) => {
-  const query = "SELECT * FROM facts";
+  const query = new azureStorage.TableQuery().select([
+    "text",
+    "Timestamp",
+    "area",
+    "longitude",
+    "latitude",
+  ]);
 
-  // Execute the query
-  connection.query(query, (err, results) => {
-    if (err) {
-      res.status(500).json({ query: query, error: err.message });
-      return;
+  // Execute the query to retrieve specific columns
+  tableService.queryEntities(
+    tableName,
+    query,
+    null,
+    (err, result, response) => {
+      if (err) {
+        res.status(500).json({ query: query, error: err.message });
+        return;
+      }
+
+      // Extract the entries from the result
+      const entries = result.entries;
+
+      // Log the entries in the console
+      //console.log("Entries from Azure Table Storage:", entries);
+
+      // Return the response
+      res.json(entries);
     }
-
-    res.json(results);
-  });
+  );
 });
 
 // Ruta pentru obținerea coordonatelor
 app.get("/api/getCoordinates", (req, res) => {
-  try {
-    const query = "SELECT longitude, latitude FROM facts";
-    connection.query(query, (err, results) => {
+  const query = new azureStorage.TableQuery().select(["longitude", "latitude"]);
+
+  // Execute the query to retrieve specific columns
+  tableService.queryEntities(
+    tableName,
+    query,
+    null,
+    (err, result, response) => {
       if (err) {
-        console.error("Error fetching coordinates from the database: ", err);
+        console.error(
+          "Error fetching coordinates from Azure Table Storage: ",
+          err
+        );
         res.status(500).json({ error: "Internal Server Error" });
         return;
       }
 
-      // Extract long and lat from the results
-      const coordinates = results.map((result) => ({
-        longitude: result.longitude,
-        latitude: result.latitude,
+      // Extract the entries from the result
+      const entries = result.entries;
+
+      // Extract long and lat from the entries
+      const coordinates = entries.map((entry) => ({
+        longitude: entry.longitude["_"],
+        latitude: entry.latitude["_"],
       }));
-      console.log("Coordonatele obținute:", coordinates);
+
+      // Log the coordinates to console
+      console.log("Coordonatele din Azure sunt:", coordinates);
+
       // Return the response
       res.json({ coordinates });
-    });
-  } catch (error) {
-    console.error("Error in /api/getCoordinates:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+    }
+  );
 });
 
-/*app.get("/api/getCoordinates", (req, res) => {
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Definiți o rută care să înceapă recepția mesajelor
+app.get("/api/startReceiver", async (req, res) => {
   try {
-    const query = "SELECT long, lat FROM facts";
+    const messages = []; // Crează un array pentru a stoca mesajele
+    // Apelați funcția care începe recepția mesajelor
+    // create a Service Bus client using the connection string to the Service Bus namespace
+    const sbClient = new ServiceBusClient(connectionString2);
 
-    connection.query(query, (err, results) => {
-      if (err) {
-        console.error("Error fetching coordinates from the database:", err);
-        res.status(500).json({ error: "Internal Server Error" });
-        return;
-      }
-
-      // Extract long and lat from the results
-      const coordinates = results.map((result) => ({
-        long: result.long,
-        lat: result.lat,
-      }));
-
-      // Return the response
-      res.json({ coordinates });
+    // createReceiver() can also be used to create a receiver for a subscription.
+    const receiver = sbClient.createReceiver(queueName, {
+      receiveMode: "receiveAndDelete", // Setarea modului pentru a citi și șterge mesajele
+      autoCompleteMessages: false, // Dezactivați completarea automată a mesajelor
     });
+
+    // function to handle messages
+    const myMessageHandler = async (messageReceived) => {
+      const messageBody = messageReceived.body.toString("utf-8");
+      console.log(`Received message: ${messageReceived.body}`);
+      messages.push(messageBody);
+    };
+
+    // function to handle any errors
+    const myErrorHandler = async (error) => {
+      console.log(error);
+    };
+
+    // subscribe and specify the message and error handlers
+    receiver.subscribe({
+      processMessage: myMessageHandler,
+      processError: myErrorHandler,
+    });
+
+    // Waiting long enough before closing the sender to send messages
+    await delay(20000);
+
+    await receiver.close();
+    await sbClient.close();
+    // Returnați un răspuns către frontend (poate fi un JSON cu un mesaj de succes)
+    res.json({ messages });
   } catch (error) {
-    console.error("Error in /api/getCoordinates:", error);
+    console.error("Error starting receiver:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-*/
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });

@@ -21,7 +21,12 @@
       <header class="header">
         <div class="logo">
           <img src="logo.png" height="68" width="68" alt="Ambrosia Alert" />
-          <h1>Ambrosia Alert</h1>
+          <a
+            href="http://localhost:3000/"
+            style="text-decoration: none; color: inherit"
+          >
+            <h1>Ambrosia Alert</h1>
+          </a>
         </div>
         <button id="scrollToTopBtn" title="Go to top">&#9650;</button>
         <button class="btn btn-large btn-map">
@@ -35,9 +40,8 @@
       <form class="fact-form hidden">
         <input type="text" placeholder="Share information" />
         <span>200</span>
-        <input type="date" placeholder="Share date" />
         <select>
-          <option value="">Choose city area:</option>
+          <option value="">City area:</option>
           <option value="cetate">Cetate</option>
           <option value="aradului">Aradului</option>
           <option value="blascovici">Blascovici</option>
@@ -79,9 +83,6 @@
                   <label for="name">Username:</label>
                   <input type="text" id="name" name="name" required />
 
-                  <label for="adress">Adress:</label>
-                  <input type="adress" id="adress" name="adress" required />
-
                   <label for="email">Email:</label>
                   <input type="email" id="email" name="email" required />
 
@@ -92,7 +93,13 @@
                   >
                     Close
                   </button>
-                  <button class="btn-login" type="submit">Check</button>
+                  <button
+                    class="btn-login"
+                    type="button"
+                    onclick="submitFormData()"
+                  >
+                    Check
+                  </button>
                 </form>
               </div>
               <button class="btn btn-all-categories" onclick="openLoginForm()">
@@ -102,7 +109,7 @@
             <li class="category">
               <button id="btn-all" class="btn btn-all-categories">All</button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-cetate"
                 class="btn btn-category"
@@ -111,7 +118,7 @@
                 Cetate
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-aradului"
                 class="btn btn-category"
@@ -120,7 +127,7 @@
                 Aradului
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-blascovici"
                 class="btn btn-category"
@@ -129,7 +136,7 @@
                 Blascovici
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-sagului"
                 class="btn btn-category"
@@ -138,7 +145,7 @@
                 Sagului
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-mehala"
                 class="btn btn-category"
@@ -147,7 +154,7 @@
                 Mehala
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-elisabetin"
                 class="btn btn-category"
@@ -156,7 +163,7 @@
                 Elisabetin
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-plopi"
                 class="btn btn-category"
@@ -165,7 +172,7 @@
                 Plopi
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-iosefin"
                 class="btn btn-category"
@@ -174,7 +181,7 @@
                 Iosefin
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-fratelia"
                 class="btn btn-category"
@@ -183,7 +190,7 @@
                 Fratelia
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-ciarda"
                 class="btn btn-category"
@@ -192,7 +199,7 @@
                 Ciarda Rosie
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-torontalului"
                 class="btn btn-category"
@@ -201,7 +208,7 @@
                 Torontalului
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-soarelui"
                 class="btn btn-category"
@@ -210,7 +217,7 @@
                 Soarelui
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-girocului"
                 class="btn btn-category"
@@ -219,7 +226,7 @@
                 Girocului
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-fabric"
                 class="btn btn-category"
@@ -228,7 +235,7 @@
                 Fabric
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-freidorf"
                 class="btn btn-category"
@@ -237,7 +244,7 @@
                 Freidorf
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-lipovei"
                 class="btn btn-category"
@@ -246,7 +253,7 @@
                 Lipovei
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-braytim"
                 class="btn btn-category"
@@ -255,7 +262,7 @@
                 Braytim
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-circumvalatiunii"
                 class="btn btn-category"
@@ -264,7 +271,7 @@
                 Circumvalatiunii
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-ronat"
                 class="btn btn-category"
@@ -273,7 +280,7 @@
                 Ronat
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-complex"
                 class="btn btn-category"
@@ -282,7 +289,7 @@
                 Complexul Studentesc
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-tipografilor"
                 class="btn btn-category"
@@ -291,7 +298,7 @@
                 Tipografilor
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-ghiroda"
                 class="btn btn-category"
@@ -300,7 +307,7 @@
                 Ghiroda
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-padurea"
                 class="btn btn-category"
@@ -309,7 +316,7 @@
                 Padurea Verde
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-dumbravita"
                 class="btn btn-category"
@@ -318,7 +325,7 @@
                 Dumbravita
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-mosnita"
                 class="btn btn-category"
@@ -327,7 +334,7 @@
                 Mosnita Noua
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-giroc"
                 class="btn btn-category"
@@ -336,7 +343,7 @@
                 Giroc
               </button>
             </li>
-            <li class="category">
+            <li class="category" style="display: none">
               <button
                 id="btn-urseni"
                 class="btn btn-category"
@@ -357,7 +364,6 @@
     <!-- Overlay background -->
 
     <!-- Login form container -->
-
     <script src="script.js"></script>
   </body>
 </html>

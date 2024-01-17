@@ -9,6 +9,7 @@ body {
   color: #fafaf9;
   font-family: "Sono", sans-serif;
   padding: 48px 64px;
+  margin: 0;
 }
 
 /* MAIN LAYOUT */
@@ -47,6 +48,7 @@ body {
 .logo img {
   width: 68px;
   height: 68px;
+  vertical-align: middle;
 }
 
 .login-container {
@@ -102,6 +104,13 @@ h1 {
   display: flex;
   align-items: center;
   gap: 24px;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .no-result {
